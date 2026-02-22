@@ -1,0 +1,32 @@
+# PyCharm / IntelliJ
+.idea/
+*.iws
+*.iml
+*.ipr
+out/
+
+# Python clutter
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.ipynb_checkpoints/
+
+# Environments
+.venv/
+venv/
+env/
+bin/
+lib/
+include/
+
+# Data and Weights (standard for PyTorch)
+# Don't commit large datasets or model checkpoints!
+data/
+*.pt
+*.pth
+*.ckpt
+
+# OS specific
+.DS_Store
+Thumbs.db
