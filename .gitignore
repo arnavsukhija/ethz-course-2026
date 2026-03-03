@@ -11,6 +11,10 @@ __pycache__/
 *$py.class
 .pytest_cache/
 .ipynb_checkpoints/
+*.egg-info/
+
+# MuJoCo Logs
+**/MUJOCO_LOG.TXT
 
 # Environments
 .venv/
@@ -19,6 +23,7 @@ env/
 bin/
 lib/
 include/
+mujoco/
 
 # Data and Weights (standard for PyTorch)
 # Don't commit large datasets or model checkpoints!
