@@ -33,17 +33,17 @@ This is needed to compensate for constant disturbances such, adapting to system 
 # Question 3 PrintLog
 
 Loading model from /home/arnav/workspace/RobotLearning/ethz-course-2026/hw2_robot_control_mdps/logs/so100_tracking/so100_tracking_4/model_400.zip...
-Final EE tracking error: 0.0053
-Final EE tracking error: 0.0020
-Final EE tracking error: 0.0039
-Final EE tracking error: 0.0193
-Final EE tracking error: 0.0016
-Final EE tracking error: 0.0085
-Final EE tracking error: 0.0110
-Final EE tracking error: 0.0008
-Final EE tracking error: 0.0147
-Final EE tracking error: 0.0088
-Average final EE tracking error: 0.0076
+Final EE tracking error: 0.0065
+Final EE tracking error: 0.0027
+Final EE tracking error: 0.0122
+Final EE tracking error: 0.0065
+Final EE tracking error: 0.0042
+Final EE tracking error: 0.0205
+Final EE tracking error: 0.0035
+Final EE tracking error: 0.0058
+Final EE tracking error: 0.0073
+Final EE tracking error: 0.0061
+Average final EE tracking error: 0.0075
 
 
 
