@@ -47,3 +47,16 @@ Average final EE tracking error: 0.0075
 
 
 
+# Question 3 Improved Policy
+
+Final EE tracking error: 0.0035
+Final EE tracking error: 0.0039
+Final EE tracking error: 0.0034
+Final EE tracking error: 0.0026
+Final EE tracking error: 0.0030
+Final EE tracking error: 0.0038
+Final EE tracking error: 0.0028
+Final EE tracking error: 0.0002
+Final EE tracking error: 0.0027
+Final EE tracking error: 0.0029
+Average final EE tracking error: 0.0029
