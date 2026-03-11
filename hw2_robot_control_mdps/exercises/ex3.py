@@ -59,8 +59,8 @@ def process_action(action: np.ndarray, jnt_range: np.ndarray) -> np.ndarray:
     """
     
     # we do this through linearly interpolating
-    joint_pos = ((jnt_range[:, 1] - jnt_range[:, 0]) / 2.0 * action) + (jnt_range[:, 1] + jnt_range[:, 0]) / 2.0
-    return joint_pos
+    target_qpos = ((jnt_range[:, 1] - jnt_range[:, 0]) / 2.0 * action) + (jnt_range[:, 1] + jnt_range[:, 0]) / 2.0
+    return target_qpos
 
 
 def compute_reward(ee_tracking_error: float, action: np.ndarray, previous_action: np.ndarray, vel: np.ndarray) -> float:
