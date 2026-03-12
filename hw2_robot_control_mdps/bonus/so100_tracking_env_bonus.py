@@ -61,8 +61,8 @@ class SO100TrackEnv(gym.Env):
     def _process_action(self, action):
         return process_action(action, self.model.jnt_range)
 
-    def compute_reward(self):
-        return compute_reward(self.ee_tracking_error)
+    def compute_reward(self, action):
+        return compute_reward(self.ee_tracking_error, action, self.prev_action, self.data.qvel)
 
     def step(self, action):
         self.data.ctrl[:] = self._process_action(action)
