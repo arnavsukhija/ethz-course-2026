@@ -63,7 +63,7 @@ def process_action(action: np.ndarray, jnt_range: np.ndarray) -> np.ndarray:
     return target_qpos
 
 
-def compute_reward(ee_tracking_error: float, action: np.ndarray | None = None, previous_action: np.ndarray | None = None, vel: np.ndarray | None = None) -> float:
+def compute_reward(ee_tracking_error: float, action: np.ndarray, previous_action: np.ndarray, vel: np.ndarray) -> float:
     """
     TODO: 
     Calculate the reward based on the distance (error) to the target. 
@@ -79,19 +79,29 @@ def compute_reward(ee_tracking_error: float, action: np.ndarray | None = None, p
 
     Inputs:
     - ee_tracking_error: float. Distance between end-effector and target point. Dimensionality: scalar
-    - action: np.ndarray. Current executed action. Ignore if None
-    - previous_action: np.ndarray. Previously executed action. Ignore if None
-    - vel: np.ndarray. Current velocity. Ignore if None
+    - action: np.ndarray. Current executed action.
+    - previous_action: np.ndarray. Previously executed action.
+    - vel: np.ndarray. Current velocity.
 
     Returns:
     - reward: float. The computed reward based on the tracking error. Dimensionality: scalar
     """
 
-    # to pass autograder checks with normal env code, we consider the cases without the updated reward
     dense_reward = np.exp(-2.0 * ee_tracking_error)
     sparse_reward = 1.0 if ee_tracking_error < 0.005 else 0.0
 
-    return dense_reward + sparse_reward
+    # here we add the penalties to avoid the observed behavior
+
+    # with the above reward, the arm uses very high torques (it rotates a lot). Since this can be bad for hardware wear, we use a penalty
+    action_penalty = -0.01 * np.sum(np.square(action))
+
+    # the policy is very jittery, especially on the corners. To have smoother action deltas, we penalize large deltas
+    action_delta = -0.05 * np.sum(np.square(action - previous_action))
+
+    # we also add a penalty for moving too fast, which was a problem observed from the initial policy
+    vel_penalty = -0.001 * np.sum(np.square(vel))
+
+    return dense_reward + sparse_reward + action_penalty + action_delta + vel_penalty
 
 
 def get_obs(qpos: np.ndarray, ee_pos_w: np.ndarray, ee_rot_w: np.ndarray, base_pos_w: np.ndarray, base_rot_w: np.ndarray, target_pos_w: np.ndarray) -> np.ndarray:
