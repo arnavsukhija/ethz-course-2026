@@ -7,6 +7,7 @@ from typing import Literal, TypeAlias
 
 import torch
 from torch import nn
+import torch.nn.functional as F
 
 
 class BasePolicy(nn.Module, metaclass=abc.ABCMeta):
@@ -36,31 +37,70 @@ class ObstaclePolicy(BasePolicy):
     A simple MLP that maps a state vector to a flat action chunk
     (chunk_size * action_dim) and reshapes to (B, chunk_size, action_dim).
     """
+    def __init__(self, state_dim: int, action_dim: int, chunk_size: int):
+        super().__init__(state_dim, action_dim, chunk_size)
+        hidden_dim = 256
+        self.backbone = nn.Sequential(
+            nn.Linear(state_dim, hidden_dim),
+            nn.LayerNorm(hidden_dim),
+            nn.Mish(),
+            nn.Linear(hidden_dim, hidden_dim*2),
+            nn.LayerNorm(hidden_dim*2),
+            nn.Mish(),
+            nn.Linear(hidden_dim*2, hidden_dim),
+            nn.LayerNorm(hidden_dim),
+            nn.Mish(),
+        )
+        self.action_head = nn.Linear(hidden_dim, chunk_size * action_dim)
 
-    def forward(self) -> torch.Tensor:
+    def forward(self, state: torch.Tensor) -> torch.Tensor:
         """Return predicted action chunk of shape (B, chunk_size, action_dim)."""
-        raise NotImplementedError
+        h = self.backbone(state)
+        actions = self.action_head(h)
+        return actions.view(-1, self.chunk_size, self.action_dim)
 
     def compute_loss(self, state: torch.Tensor, action_chunk: torch.Tensor) -> torch.Tensor:
-        raise NotImplementedError
+        # use loss from BC (MSE)
+        predicted_chunk = self.forward(state)
+        return F.mse_loss(predicted_chunk, action_chunk)
 
     def sample_actions(self, state: torch.Tensor) -> torch.Tensor:
-        raise NotImplementedError
+        # use eval mode to generate the actions
+        self.eval()
+        with torch.no_grad():
+            return self.forward(state)
 
 
 # TODO: Students implement MultiTaskPolicy here.
 class MultiTaskPolicy(BasePolicy):
     """Goal-conditioned policy for the multicube scene."""
+    def __init__(self, state_dim: int, action_dim: int, chunk_size: int):
+        super().__init__(state_dim, action_dim, chunk_size)
+        # Now we include state position as well as goal position
+
+        hidden_dim = 512
+        self.network = nn.Sequential(
+            nn.Linear(state_dim, hidden_dim),
+            nn.LayerNorm(hidden_dim),
+            nn.Mish(),
+            nn.Linear(hidden_dim, hidden_dim),
+            nn.LayerNorm(hidden_dim),
+            nn.Mish(),
+            nn.Linear(hidden_dim, chunk_size * action_dim),
+        )
 
     def compute_loss(self, state: torch.Tensor, action_chunk: torch.Tensor) -> torch.Tensor:
-        raise NotImplementedError
+        return F.mse_loss(self.forward(state), action_chunk)
 
     def sample_actions(self, state: torch.Tensor) -> torch.Tensor:
-        raise NotImplementedError
+        self.eval()
+        with torch.no_grad():
+            return self.network(state)
 
-    def forward(self) -> torch.Tensor:
+    def forward(self, state: torch.Tensor) -> torch.Tensor:
         """Return predicted action chunk of shape (B, chunk_size, action_dim)."""
-        raise NotImplementedError
+        actions = self.network(state)
+        return actions.view(-1, self.chunk_size, self.action_dim)
 
 
 PolicyType: TypeAlias = Literal["obstacle", "multitask"]
