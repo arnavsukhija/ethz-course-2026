@@ -27,10 +27,10 @@ from hw3.model import BasePolicy, build_policy
 # TODO: Any imports you want from torch or other libraries we use. Not allowed: libraries we don't use
 from torch.utils.data import DataLoader, random_split
 
-# TODO: Choose your own hyperparameters!
-EPOCHS = ... 
-BATCH_SIZE = ...
-LR = ...
+# Choose your own hyperparameters!
+DEFAULT_EPOCHS = 50
+DEFAULT_BATCH_SIZE = 64
+DEFAULT_LR = 1e-4
 VAL_SPLIT = 0.1
 
 
@@ -80,10 +80,16 @@ def evaluate(
 
 
 def main() -> None:
-    # TODO: You may add any cli arguments that make life easier for you like learning rate etc.
+    # You may add any cli arguments that make life easier for you like learning rate etc.
     parser = argparse.ArgumentParser(description="Train action-chunking policy.")
     parser.add_argument(
         "--zarr", type=Path, required=True, help="Path to processed .zarr store."
+    )
+    parser.add_argument(
+        "--extra-zarr",
+        type=Path,
+        nargs="+",
+        help="Path(s) to additional processed .zarr stores to merge (e.g. for DAgger).",
     )
     parser.add_argument(
         "--policy",
@@ -113,11 +119,19 @@ def main() -> None:
         "Supports column slicing with [:N], [M:], [M:N]. "
         "If omitted, uses the action_key attribute from the zarr metadata.",
     )
+    parser.add_argument("--epochs", type=int, default=DEFAULT_EPOCHS, help="Number of training epochs.")
+    parser.add_argument("--batch-size", type=int, default=DEFAULT_BATCH_SIZE, help="Batch size.")
+    parser.add_argument("--lr", type=float, default=DEFAULT_LR, help="Learning rate.")
     parser.add_argument("--seed", type=int, default=42, help="Random seed.")
+    parser.add_argument("--device", type=str, default=None, help="Device (cuda/cpu). Auto-detected if None.")
     args = parser.parse_args()
 
     torch.manual_seed(args.seed)
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    if args.device:
+        device = torch.device(args.device)
+    else:
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    
     print(f"Device: {device}")
 
     # ── load data ─────────────────────────────────────────────────────
@@ -158,10 +172,10 @@ def main() -> None:
     )
 
     train_loader = DataLoader(
-        train_ds, batch_size=BATCH_SIZE, shuffle=True, num_workers=0
+        train_ds, batch_size=args.batch_size, shuffle=True, num_workers=0
     )
     val_loader = DataLoader(
-        val_ds, batch_size=BATCH_SIZE, shuffle=False, num_workers=0
+        val_ds, batch_size=args.batch_size, shuffle=False, num_workers=0
     )
 
     # ── model ─────────────────────────────────────────────────────────
@@ -169,15 +183,17 @@ def main() -> None:
         args.policy,
         state_dim=states.shape[1],
         action_dim=actions.shape[1],
-        # TODO: build with your desired specifications
+        chunk_size=args.chunk_size,
+        d_model=512,
+        depth=3,
     ).to(device)
 
     n_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
     print(f"Model parameters: {n_params:,}")
 
-    # TODO: implement an optimizer and scheduler
-    optimizer = torch.optim.Adam(model.parameters(), lr=LR)
-    scheduler = torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(optimizer, T_0=20, T_mult=1, eta_min=1e-6)
+    # implement an optimizer and scheduler
+    optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr, weight_decay=1e-4)
+    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=args.epochs, eta_min=1e-6)
 
     # ── training loop ─────────────────────────────────────────────────
     best_val = float("inf")
@@ -207,7 +223,7 @@ def main() -> None:
     save_path = ckpt_dir / save_name
     save_path.parent.mkdir(parents=True, exist_ok=True)
 
-    for epoch in range(1, EPOCHS + 1):
+    for epoch in range(1, args.epochs + 1):
         train_loss = train_one_epoch(model, train_loader, optimizer, device)
         val_loss = evaluate(model, val_loader, device)
         scheduler.step()
@@ -232,6 +248,8 @@ def main() -> None:
                     "action_keys": args.action_keys,
                     "state_dim": int(states.shape[1]),
                     "action_dim": int(actions.shape[1]),
+                    "d_model": 512,
+                    "depth": 3,
                     "val_loss": val_loss,
                 },
                 save_path,
@@ -239,7 +257,7 @@ def main() -> None:
             tag = " ✓ saved"
 
         print(
-            f"Epoch {epoch:3d}/{EPOCHS} | "
+            f"Epoch {epoch:3d}/{args.epochs} | "
             f"train {train_loss:.6f} | val {val_loss:.6f}{tag}"
         )
 

@@ -1,26 +1,26 @@
 {
   "move_up": {
-    "raw": 63232,
-    "ascii": 0,
-    "label": "raw:63232",
+    "raw": 65362,
+    "ascii": 82,
+    "label": "R",
     "description": "Move EE up (+Z) (recommended: UP ARROW)"
   },
   "move_down": {
-    "raw": 63233,
-    "ascii": 1,
-    "label": "raw:63233",
+    "raw": 65364,
+    "ascii": 84,
+    "label": "T",
     "description": "Move EE down (-Z) (recommended: DOWN ARROW)"
   },
   "move_left": {
-    "raw": 63234,
-    "ascii": 2,
-    "label": "raw:63234",
+    "raw": 65361,
+    "ascii": 81,
+    "label": "Q",
     "description": "Move EE left (-X) (recommended: LEFT ARROW)"
   },
   "move_right": {
-    "raw": 63235,
-    "ascii": 3,
-    "label": "raw:63235",
+    "raw": 65363,
+    "ascii": 83,
+    "label": "S",
     "description": "Move EE right (+X) (recommended: RIGHT ARROW)"
   },
   "move_forward": {
@@ -36,51 +36,51 @@
     "description": "Move EE backward (-Y) (recommended: S)"
   },
   "rot_x_pos": {
-    "raw": 120,
-    "ascii": 120,
-    "label": "x",
+    "raw": 105,
+    "ascii": 105,
+    "label": "i",
     "description": "Rotate EE +X axis"
   },
   "rot_x_neg": {
-    "raw": 110,
-    "ascii": 110,
-    "label": "n",
-    "description": "Rotate EE -X axis"
-  },
-  "rot_y_pos": {
-    "raw": 121,
-    "ascii": 121,
-    "label": "y",
-    "description": "Rotate EE +Y axis"
-  },
-  "rot_y_neg": {
-    "raw": 109,
-    "ascii": 109,
-    "label": "m",
-    "description": "Rotate EE -Y axis"
-  },
-  "rot_z_pos": {
-    "raw": 122,
-    "ascii": 122,
-    "label": "z",
-    "description": "Rotate EE +Z axis"
-  },
-  "rot_z_neg": {
-    "raw": 116,
-    "ascii": 116,
-    "label": "t",
-    "description": "Rotate EE -Z axis"
-  },
-  "gripper_open": {
-    "raw": 111,
-    "ascii": 111,
-    "label": "o",
-    "description": "Open gripper (Jaw +)"
-  },
-  "gripper_close": {
     "raw": 107,
     "ascii": 107,
     "label": "k",
+    "description": "Rotate EE -X axis"
+  },
+  "rot_y_pos": {
+    "raw": 106,
+    "ascii": 106,
+    "label": "j",
+    "description": "Rotate EE +Y axis"
+  },
+  "rot_y_neg": {
+    "raw": 108,
+    "ascii": 108,
+    "label": "l",
+    "description": "Rotate EE -Y axis"
+  },
+  "rot_z_pos": {
+    "raw": 117,
+    "ascii": 117,
+    "label": "u",
+    "description": "Rotate EE +Z axis"
+  },
+  "rot_z_neg": {
+    "raw": 111,
+    "ascii": 111,
+    "label": "o",
+    "description": "Rotate EE -Z axis"
+  },
+  "gripper_open": {
+    "raw": 113,
+    "ascii": 113,
+    "label": "q",
+    "description": "Open gripper (Jaw +)"
+  },
+  "gripper_close": {
+    "raw": 101,
+    "ascii": 101,
+    "label": "e",
     "description": "Close gripper (Jaw -)"
   },
   "reset": {
@@ -108,21 +108,21 @@
     "description": "Quit session (recommended: ESC)"
   },
   "goal_cube_red": {
-    "raw": 103,
-    "ascii": 103,
-    "label": "g",
+    "raw": 49,
+    "ascii": 49,
+    "label": "1",
     "description": "Select RED cube as goal (multicube only)"
   },
   "goal_cube_green": {
-    "raw": 102,
-    "ascii": 102,
-    "label": "f",
+    "raw": 50,
+    "ascii": 50,
+    "label": "2",
     "description": "Select GREEN cube as goal (multicube only)"
   },
   "goal_cube_blue": {
-    "raw": 104,
-    "ascii": 104,
-    "label": "h",
+    "raw": 51,
+    "ascii": 51,
+    "label": "3",
     "description": "Select BLUE cube as goal (multicube only)"
   }
 }

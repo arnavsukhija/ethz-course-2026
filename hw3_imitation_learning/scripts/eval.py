@@ -167,6 +167,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--max-steps", type=int, default=800, help="Maximum steps per episode (default: 800).")
     parser.add_argument("--headless", action="store_true", help="Run without rendering.")
     parser.add_argument("--seed", type=int, default=None, help="Random seed for reproducible cube spawns.")
+    parser.add_argument("--device", type=str, default=None, help="Device (cuda/cpu). Auto-detected if None.")
 
     # single-cube args
     parser.add_argument("--adversarial-obstacle", action="store_true", help="Use adversarial three-zone obstacle placement.")
@@ -180,8 +181,10 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> None:
     args = parse_args()
-
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    if args.device:
+        device = torch.device(args.device)
+    else:
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Device: {device}")
 
     model, normalizer, _chunk_size, state_keys, action_keys = load_checkpoint(
