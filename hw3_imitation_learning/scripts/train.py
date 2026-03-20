@@ -27,11 +27,11 @@ from hw3.model import BasePolicy, build_policy
 # TODO: Any imports you want from torch or other libraries we use. Not allowed: libraries we don't use
 from torch.utils.data import DataLoader, random_split
 
-# Choose your own hypepaameters!
-DEFAULT_EPOCHS = 50
-DEFAULT_BATCH_SIZE = 64
-DEFAULT_LR = 1e-4
-VAL_SPLIT = 0.1
+# Choose your own hyperparameters!
+DEFAULT_EPOCHS = 150
+DEFAULT_BATCH_SIZE = 16
+DEFAULT_LR = 5e-4
+VAL_SPLIT = 0.2
 
 
 def train_one_epoch(
@@ -122,7 +122,7 @@ def main() -> None:
     parser.add_argument("--epochs", type=int, default=DEFAULT_EPOCHS, help="Number of training epochs.")
     parser.add_argument("--batch-size", type=int, default=DEFAULT_BATCH_SIZE, help="Batch size.")
     parser.add_argument("--lr", type=float, default=DEFAULT_LR, help="Learning rate.")
-    parser.add_argument("--dropout", type=float, default=0.1, help="Dropout rate (default: 0.1).")
+    parser.add_argument("--dropout", type=float, default=0.15, help="Dropout rate (default: 0.15).")
     parser.add_argument("--seed", type=int, default=42, help="Random seed.")
     parser.add_argument("--device", type=str, default=None, help="Device (cuda/cpu). Auto-detected if None.")
     parser.add_argument("--no-padding", action="store_true", help="Disable padding for episode endings (default: padding enabled).")
