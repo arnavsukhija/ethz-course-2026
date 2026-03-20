@@ -37,7 +37,7 @@ class ObstaclePolicy(BasePolicy):
     A simple MLP that maps a state vector to a flat action chunk
     (chunk_size * action_dim) and reshapes to (B, chunk_size, action_dim).
     """
-    def __init__(self, state_dim: int, action_dim: int, chunk_size: int, d_model: int = 512, depth: int = 3, dropout: float = 0.1):
+    def __init__(self, state_dim: int, action_dim: int, chunk_size: int, d_model: int = 256, depth: int = 3, dropout: float = 0.2):
         super().__init__(state_dim, action_dim, chunk_size)
 
         layers = []
@@ -74,7 +74,7 @@ class ObstaclePolicy(BasePolicy):
 # TODO: Students implement MultiTaskPolicy here.
 class MultiTaskPolicy(BasePolicy):
     """Goal-conditioned policy for the multicube scene."""
-    def __init__(self, state_dim: int, action_dim: int, chunk_size: int, d_model: int = 512, depth: int = 3, dropout: float = 0.1):
+    def __init__(self, state_dim: int, action_dim: int, chunk_size: int, d_model: int = 256, depth: int = 3, dropout: float = 0.2):
         super().__init__(state_dim, action_dim, chunk_size)
 
         layers = []
