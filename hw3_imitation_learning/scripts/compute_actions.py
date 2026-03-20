@@ -241,9 +241,6 @@ def load_and_merge_zarrs(zarr_paths: list[Path]) -> dict[str, np.ndarray]:
 
     for zpath in sorted(zarr_paths):
         root = zarr.open_group(str(zpath), mode="r")
-        if "data" not in root:
-            print(f"  Skipping {zpath} (missing 'data' group - possibly incomplete recording)")
-            continue
         data_grp = root["data"]
         meta_grp = root["meta"]
 

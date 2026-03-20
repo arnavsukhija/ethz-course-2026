@@ -1,26 +1,26 @@
 {
   "move_up": {
-    "raw": 65362,
-    "ascii": 82,
-    "label": "R",
+    "raw": 63232,
+    "ascii": 0,
+    "label": "raw:63232",
     "description": "Move EE up (+Z) (recommended: UP ARROW)"
   },
   "move_down": {
-    "raw": 65364,
-    "ascii": 84,
-    "label": "T",
+    "raw": 63233,
+    "ascii": 1,
+    "label": "raw:63233",
     "description": "Move EE down (-Z) (recommended: DOWN ARROW)"
   },
   "move_left": {
-    "raw": 65361,
-    "ascii": 81,
-    "label": "Q",
+    "raw": 63234,
+    "ascii": 2,
+    "label": "raw:63234",
     "description": "Move EE left (-X) (recommended: LEFT ARROW)"
   },
   "move_right": {
-    "raw": 65363,
-    "ascii": 83,
-    "label": "S",
+    "raw": 63235,
+    "ascii": 3,
+    "label": "raw:63235",
     "description": "Move EE right (+X) (recommended: RIGHT ARROW)"
   },
   "move_forward": {

@@ -27,7 +27,7 @@ from hw3.model import BasePolicy, build_policy
 # TODO: Any imports you want from torch or other libraries we use. Not allowed: libraries we don't use
 from torch.utils.data import DataLoader, random_split
 
-# Choose your own hyperparameters!
+# Choose your own hypepaameters!
 DEFAULT_EPOCHS = 50
 DEFAULT_BATCH_SIZE = 64
 DEFAULT_LR = 1e-4
@@ -122,8 +122,10 @@ def main() -> None:
     parser.add_argument("--epochs", type=int, default=DEFAULT_EPOCHS, help="Number of training epochs.")
     parser.add_argument("--batch-size", type=int, default=DEFAULT_BATCH_SIZE, help="Batch size.")
     parser.add_argument("--lr", type=float, default=DEFAULT_LR, help="Learning rate.")
+    parser.add_argument("--dropout", type=float, default=0.1, help="Dropout rate (default: 0.1).")
     parser.add_argument("--seed", type=int, default=42, help="Random seed.")
     parser.add_argument("--device", type=str, default=None, help="Device (cuda/cpu). Auto-detected if None.")
+    parser.add_argument("--no-padding", action="store_true", help="Disable padding for episode endings (default: padding enabled).")
     args = parser.parse_args()
 
     torch.manual_seed(args.seed)
@@ -160,8 +162,9 @@ def main() -> None:
         ep_ends,
         chunk_size=args.chunk_size,
         normalizer=normalizer,
+        use_padding=not args.no_padding,
     )
-    print(f"Dataset: {len(dataset)} samples, chunk_size={args.chunk_size}")
+    print(f"Dataset: {len(dataset)} samples, chunk_size={args.chunk_size}, padding={'enabled' if not args.no_padding else 'disabled'}")
     print(f"  state_dim={states.shape[1]}, action_dim={actions.shape[1]}")
 
     # ── train / val split ─────────────────────────────────────────────
@@ -184,8 +187,9 @@ def main() -> None:
         state_dim=states.shape[1],
         action_dim=actions.shape[1],
         chunk_size=args.chunk_size,
-        d_model=512,
+        d_model=256,
         depth=3,
+        dropout=args.dropout,
     ).to(device)
 
     n_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
@@ -248,7 +252,7 @@ def main() -> None:
                     "action_keys": args.action_keys,
                     "state_dim": int(states.shape[1]),
                     "action_dim": int(actions.shape[1]),
-                    "d_model": 512,
+                    "d_model": 256,
                     "depth": 3,
                     "val_loss": val_loss,
                 },

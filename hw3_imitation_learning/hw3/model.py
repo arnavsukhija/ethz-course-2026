@@ -37,9 +37,9 @@ class ObstaclePolicy(BasePolicy):
     A simple MLP that maps a state vector to a flat action chunk
     (chunk_size * action_dim) and reshapes to (B, chunk_size, action_dim).
     """
-    def __init__(self, state_dim: int, action_dim: int, chunk_size: int, d_model: int = 512, depth: int = 3):
+    def __init__(self, state_dim: int, action_dim: int, chunk_size: int, d_model: int = 512, depth: int = 3, dropout: float = 0.1):
         super().__init__(state_dim, action_dim, chunk_size)
-        
+
         layers = []
         in_dim = state_dim
         for _ in range(depth):
@@ -47,6 +47,7 @@ class ObstaclePolicy(BasePolicy):
                 nn.Linear(in_dim, d_model),
                 nn.LayerNorm(d_model),
                 nn.Mish(),
+                nn.Dropout(dropout),
             ])
             in_dim = d_model
         self.backbone = nn.Sequential(*layers)
@@ -73,9 +74,9 @@ class ObstaclePolicy(BasePolicy):
 # TODO: Students implement MultiTaskPolicy here.
 class MultiTaskPolicy(BasePolicy):
     """Goal-conditioned policy for the multicube scene."""
-    def __init__(self, state_dim: int, action_dim: int, chunk_size: int, d_model: int = 512, depth: int = 3):
+    def __init__(self, state_dim: int, action_dim: int, chunk_size: int, d_model: int = 512, depth: int = 3, dropout: float = 0.1):
         super().__init__(state_dim, action_dim, chunk_size)
-        
+
         layers = []
         in_dim = state_dim
         for _ in range(depth):
@@ -83,6 +84,7 @@ class MultiTaskPolicy(BasePolicy):
                 nn.Linear(in_dim, d_model),
                 nn.LayerNorm(d_model),
                 nn.Mish(),
+                nn.Dropout(dropout),
             ])
             in_dim = d_model
         self.network = nn.Sequential(*layers)
@@ -124,6 +126,7 @@ def build_policy(
             chunk_size=chunk_size,
             d_model=d_model,
             depth=depth,
+            **kwargs,
         )
     if policy_type == "multitask":
         return MultiTaskPolicy(
@@ -132,5 +135,6 @@ def build_policy(
             chunk_size=chunk_size,
             d_model=d_model,
             depth=depth,
+            **kwargs,
         )
     raise ValueError(f"Unknown policy type: {policy_type}")

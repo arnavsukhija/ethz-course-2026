@@ -5,7 +5,7 @@ import numpy as np
 import zarr
 
 def plot_zarr(zarr_path: Path, num_episodes: int = 5):
-    root = zarr.open_group(str(zarr_path), mode="r")
+    root = zarr.open(str(zarr_path), mode="r")
     data = root["data"]
     meta = root["meta"]
     

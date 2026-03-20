@@ -1,6 +1,6 @@
 {
   "attributes": {
-    "xml": "/home/arnav/workspace/RobotLearning/ethz-course-2026/hw3_imitation_learning/so101_gym/assets/so100_transfer_cube_obstacle_ee.xml",
+    "xml": "/Users/arnavsukhija/Library/CloudStorage/OneDrive-ETHZurich/Master/FS26/RobotLearning/ethz-course-2026/hw3_imitation_learning/so101_gym/assets/so100_transfer_cube_obstacle_ee.xml",
     "joint_names": [
       "Rotation",
       "Pitch",

@@ -155,18 +155,26 @@ def load_and_merge_zarrs(
     return merged_states, merged_actions, merged_ep_ends
 
 
-def build_valid_indices(episode_ends: np.ndarray, chunk_size: int) -> np.ndarray:
+def build_valid_indices(episode_ends: np.ndarray, chunk_size: int, use_padding: bool = False) -> np.ndarray:
     """Return flat indices where a full action chunk of length ``chunk_size`` fits.
 
     For each episode [start, end) we keep indices start … (end - chunk_size).
+    If use_padding is True, we also include indices up to (end - 1), which will be
+    padded with the last action of the episode.
     """
     starts = np.concatenate(([0], episode_ends[:-1]))
     indices: list[int] = []
     for start, end in zip(starts, episode_ends, strict=True):
-        last_start = end - chunk_size
-        if last_start < start:
-            continue
-        indices.extend(range(start, last_start + 1))
+        if use_padding:
+            # Include all indices from start to (end - 1), padding will handle boundaries
+            if end > start:
+                indices.extend(range(start, end))
+        else:
+            # Original behavior: only include indices where full chunk fits
+            last_start = end - chunk_size
+            if last_start < start:
+                continue
+            indices.extend(range(start, last_start + 1))
     return np.asarray(indices, dtype=np.int64)
 
 
@@ -176,6 +184,9 @@ class SO100ChunkDataset(Dataset):
     Each sample consists of:
         state:        (state_dim,)             - state at timestep t
         action_chunk: (chunk_size, action_dim) - actions [t, t+1, …, t+H-1]
+    
+    If use_padding=True, episodes are padded with the last action to allow
+    chunks at the end of episodes, recovering ~5-6% more training data.
     """
 
     def __init__(
@@ -185,12 +196,15 @@ class SO100ChunkDataset(Dataset):
         episode_ends: np.ndarray,
         chunk_size: int,
         normalizer: Normalizer | None = None,
+        use_padding: bool = True,
     ) -> None:
         self.states = states
         self.actions = actions
         self.chunk_size = chunk_size
         self.normalizer = normalizer
-        self.indices = build_valid_indices(episode_ends, chunk_size)
+        self.use_padding = use_padding
+        self.episode_ends = episode_ends
+        self.indices = build_valid_indices(episode_ends, chunk_size, use_padding=use_padding)
 
     def __len__(self) -> int:
         return len(self.indices)
@@ -198,8 +212,31 @@ class SO100ChunkDataset(Dataset):
     def __getitem__(self, idx: int) -> tuple[torch.Tensor, torch.Tensor]:
         t = int(self.indices[idx])
         state = self.states[t]
-        action_chunk = self.actions[t : t + self.chunk_size]
-
+        
+        # Get action chunk, with padding if necessary
+        if self.use_padding:
+            # Determine which episode this index belongs to
+            ep_start = 0
+            ep_end = None
+            for end in self.episode_ends:
+                if t < end:
+                    ep_end = end
+                    break
+                ep_start = end
+            
+            # Build action chunk with padding if it extends beyond episode end
+            action_chunk = []
+            for i in range(self.chunk_size):
+                idx_needed = t + i
+                if idx_needed < ep_end:
+                    action_chunk.append(self.actions[idx_needed])
+                else:
+                    # Pad with last action of the episode
+                    action_chunk.append(self.actions[ep_end - 1])
+            action_chunk = np.array(action_chunk, dtype=np.float32)
+        else:
+            action_chunk = self.actions[t : t + self.chunk_size]
+        
         if self.normalizer is not None:
             state = self.normalizer.normalize_state(state)
             action_chunk = self.normalizer.normalize_action(action_chunk)
