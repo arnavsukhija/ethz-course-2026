@@ -47,6 +47,12 @@ def train_one_epoch(
     total_loss = 0.0
     n_batches = 0
 
+    # Pre-calculate mean/std tensors on the target device only once per epoch
+    mean, std = None, None
+    if normalizer is not None:
+        mean = torch.tensor(normalizer.state_mean, device=device, dtype=torch.float32)
+        std = torch.tensor(normalizer.state_std, device=device, dtype=torch.float32)
+
     for batch in loader:
         states, action_chunks = batch
         # TODO: Implement the training step for one batch here.
@@ -56,12 +62,10 @@ def train_one_epoch(
 
         if normalizer is not None and key_to_slice is not None:
             B = states.shape[0]
-            # Unnormalize state to perform color permutation
-            mean = torch.tensor(normalizer.state_mean, device=device, dtype=torch.float32)
-            std = torch.tensor(normalizer.state_std, device=device, dtype=torch.float32)
+            # Unnormalize state to perform augmentations
             states_unnorm = states * std + mean
             
-            # 1. Translation Augmentation: we can move each object by a random vector (dx, dy), since the underlying action is still same
+            # 1. Translation Augmentation
             dx = (torch.rand((B, 1), device=device) - 0.5) * 0.1
             dy = (torch.rand((B, 1), device=device) - 0.5) * 0.1
             for key in ["state_ee_xyz", "original_pos_cube_red", "original_pos_cube_green", "original_pos_cube_blue", "goal_pos"]:
@@ -98,7 +102,7 @@ def train_one_epoch(
 
             # Renormalize
             states = (states_unnorm - mean) / std
-
+        
         optimizer.zero_grad()
         loss = model.compute_loss(states, action_chunks)
         loss.backward()
@@ -173,6 +177,8 @@ def main() -> None:
     parser.add_argument("--batch-size", type=int, default=DEFAULT_BATCH_SIZE, help="Batch size.")
     parser.add_argument("--lr", type=float, default=DEFAULT_LR, help="Learning rate.")
     parser.add_argument("--dropout", type=float, default=0.15, help="Dropout rate (default: 0.15).")
+    parser.add_argument("--d-model", type=int, default=256, help="Hidden dimension (default: 256).")
+    parser.add_argument("--depth", type=int, default=3, help="Number of layers (default: 3).")
     parser.add_argument("--seed", type=int, default=42, help="Random seed.")
     parser.add_argument("--device", type=str, default=None, help="Device (cuda/cpu). Auto-detected if None.")
     parser.add_argument("--no-padding", action="store_true", help="Disable padding for episode endings (default: padding enabled).")
@@ -264,8 +270,8 @@ def main() -> None:
         state_dim=states.shape[1],
         action_dim=actions.shape[1],
         chunk_size=args.chunk_size,
-        d_model=256,
-        depth=3,
+        d_model=args.d_model,
+        depth=args.depth,
         dropout=args.dropout,
     ).to(device)
 
@@ -336,8 +342,8 @@ def main() -> None:
                     "action_keys": args.action_keys,
                     "state_dim": int(states.shape[1]),
                     "action_dim": int(actions.shape[1]),
-                    "d_model": 256,
-                    "depth": 3,
+                    "d_model": args.d_model,
+                    "depth": args.depth,
                     "val_loss": val_loss,
                 },
                 save_path,
