@@ -21,6 +21,7 @@ from hw3.dataset import (
     SO100ChunkDataset,
     load_and_merge_zarrs,
     load_zarr,
+    _parse_key_spec,
 )
 from hw3.model import BasePolicy, build_policy
 
@@ -39,6 +40,8 @@ def train_one_epoch(
     loader: DataLoader,
     optimizer: torch.optim.Optimizer,
     device: torch.device,
+    normalizer=None,
+    key_to_slice=None,
 ) -> float:
     model.train()
     total_loss = 0.0
@@ -48,7 +51,54 @@ def train_one_epoch(
         states, action_chunks = batch
         # TODO: Implement the training step for one batch here.
         # This mostly: Get states and action_chunks onto the correct device, compute the loss, and step the optimizer.
+        # we also perform data augmentation here for each batch
         states, action_chunks = states.to(device).float(), action_chunks.to(device).float()
+
+        if normalizer is not None and key_to_slice is not None:
+            B = states.shape[0]
+            # Unnormalize state to perform color permutation
+            mean = torch.tensor(normalizer.state_mean, device=device, dtype=torch.float32)
+            std = torch.tensor(normalizer.state_std, device=device, dtype=torch.float32)
+            states_unnorm = states * std + mean
+            
+            # 1. Translation Augmentation: we can move each object by a random vector (dx, dy), since the underlying action is still same
+            dx = (torch.rand((B, 1), device=device) - 0.5) * 0.1
+            dy = (torch.rand((B, 1), device=device) - 0.5) * 0.1
+            for key in ["state_ee_xyz", "original_pos_cube_red", "original_pos_cube_green", "original_pos_cube_blue", "goal_pos"]:
+                if key in key_to_slice:
+                    sl = key_to_slice[key]
+                    if sl.stop - sl.start >= 2:
+                        states_unnorm[:, sl.start:sl.start+1] += dx
+                        states_unnorm[:, sl.start+1:sl.start+2] += dy
+
+            # 2. Goal Relabeling / Permutation Augmentation
+            has_cubes = all(k in key_to_slice for k in ["original_pos_cube_red", "original_pos_cube_green", "original_pos_cube_blue", "state_goal"])
+            if has_cubes:
+                for i in range(B):
+                    # random permutation of [0, 1, 2]
+                    perm = torch.randperm(3, device=device)
+                    r_sl, g_sl, b_sl = key_to_slice["original_pos_cube_red"], key_to_slice["original_pos_cube_green"], key_to_slice["original_pos_cube_blue"]
+                    c_slices = [r_sl, g_sl, b_sl]
+                    vals = [states_unnorm[i, sl].clone() for sl in c_slices]
+                    
+                    for j, p in enumerate(perm):
+                        states_unnorm[i, c_slices[j]] = vals[p]
+                    
+                    goal_sl = key_to_slice["state_goal"]
+                    orig_goal = states_unnorm[i, goal_sl].clone()
+                    
+                    target_idx = torch.argmax(orig_goal)
+                    # Find which new cube received the position of the old target
+                    match_idx = torch.where(perm == target_idx)[0]
+                    if len(match_idx) > 0:
+                        new_target_idx = match_idx[0]
+                        new_goal = torch.zeros_like(orig_goal)
+                        new_goal[new_target_idx] = 1.0
+                        states_unnorm[i, goal_sl] = new_goal
+
+            # Renormalize
+            states = (states_unnorm - mean) / std
+
         optimizer.zero_grad()
         loss = model.compute_loss(states, action_chunks)
         loss.backward()
@@ -126,6 +176,7 @@ def main() -> None:
     parser.add_argument("--seed", type=int, default=42, help="Random seed.")
     parser.add_argument("--device", type=str, default=None, help="Device (cuda/cpu). Auto-detected if None.")
     parser.add_argument("--no-padding", action="store_true", help="Disable padding for episode endings (default: padding enabled).")
+    parser.add_argument("--augment-multicube", action="store_true", help="Enable PyTorch data augmentation for multicube.")
     args = parser.parse_args()
 
     torch.manual_seed(args.seed)
@@ -166,6 +217,32 @@ def main() -> None:
     )
     print(f"Dataset: {len(dataset)} samples, chunk_size={args.chunk_size}, padding={'enabled' if not args.no_padding else 'disabled'}")
     print(f"  state_dim={states.shape[1]}, action_dim={actions.shape[1]}")
+
+    def parse_key_spec_local(spec: str):
+        if "[" not in spec: return spec, slice(None)
+        name, rest = spec.split("[", 1)
+        parts = rest.rstrip("]").split(":")
+        start = int(parts[0]) if len(parts) == 2 and parts[0] else None
+        stop = int(parts[1]) if len(parts) == 2 and parts[1] else None
+        return name, slice(start, stop)
+
+    key_to_slice = None
+    if args.augment_multicube and args.state_keys:
+        root = zarr_lib.open_group(str(zarr_paths[0]), mode="r")
+        state_dims = []
+        for spec in args.state_keys:
+            name, col_slice = parse_key_spec_local(spec)
+            arr = root["data"][name][:1]
+            sliced = arr[:, col_slice] if col_slice != slice(None) else arr
+            state_dims.append(sliced.shape[1])
+        
+        key_to_slice = {}
+        curr = 0
+        for spec, dim in zip(args.state_keys, state_dims):
+            name = parse_key_spec_local(spec)[0]
+            key_to_slice[name] = slice(curr, curr + dim)
+            curr += dim
+        print(f"  Enabled Multicube Data Augmentation with slices: {key_to_slice}")
 
     # ── train / val split ─────────────────────────────────────────────
     n_val = max(1, int(len(dataset) * VAL_SPLIT))
@@ -228,7 +305,14 @@ def main() -> None:
     save_path.parent.mkdir(parents=True, exist_ok=True)
 
     for epoch in range(1, args.epochs + 1):
-        train_loss = train_one_epoch(model, train_loader, optimizer, device)
+        train_loss = train_one_epoch(
+            model,
+            train_loader,
+            optimizer,
+            device,
+            normalizer if args.augment_multicube else None,
+            key_to_slice if args.augment_multicube else None,
+        )
         val_loss = evaluate(model, val_loader, device)
         scheduler.step()
 
