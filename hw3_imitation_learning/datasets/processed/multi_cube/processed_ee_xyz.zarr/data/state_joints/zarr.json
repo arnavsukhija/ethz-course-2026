@@ -1,6 +1,6 @@
 {
   "shape": [
-    48542,
+    21451,
     6
   ],
   "data_type": "float32",
@@ -8,8 +8,8 @@
     "name": "regular",
     "configuration": {
       "chunk_shape": [
-        24271,
-        3
+        10726,
+        6
       ]
     }
   },
