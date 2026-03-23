@@ -82,7 +82,7 @@ class MultiTaskPolicy(BasePolicy):
         if state_dim == 31:
             in_dim = state_dim + 7  # Append extracted target cube location
         elif state_dim == 19:
-            in_dim = state_dim + 3  # Target cube location (xyz only)
+            in_dim = state_dim + 9  # Target cube location (3) + rel_cube (3) + rel_bin (3)
             
         layers = []
         for _ in range(depth):
@@ -110,13 +110,18 @@ class MultiTaskPolicy(BasePolicy):
             enhanced_state = torch.cat([state, target_cube], dim=1)
         elif state.shape[1] == 19:
             # ee(3), gripper(1), red(3), green(3), blue(3), goal(3), bin(3)
+            ee = state[:, 0:3]
             red = state[:, 4:7]
             green = state[:, 7:10]
             blue = state[:, 10:13]
             goal = state[:, 13:16]
+            bin_pos = state[:, 16:19]
             
             target_cube = goal[:, 0:1] * red + goal[:, 1:2] * green + goal[:, 2:3] * blue
-            enhanced_state = torch.cat([state, target_cube], dim=1)
+            rel_cube = target_cube - ee
+            rel_bin = bin_pos - ee
+            
+            enhanced_state = torch.cat([state, target_cube, rel_cube, rel_bin], dim=1)
         else:
             enhanced_state = state
 
