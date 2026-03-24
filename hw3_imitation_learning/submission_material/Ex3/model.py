@@ -74,16 +74,14 @@ class ObstaclePolicy(BasePolicy):
 # TODO: Students implement MultiTaskPolicy here.
 class MultiTaskPolicy(BasePolicy):
     """Goal-conditioned policy with explicit target cube routing."""
-    def __init__(self, state_dim: int = 19, action_dim: int = 4, chunk_size: int = 32, d_model: int = 256, depth: int = 3, dropout: float = 0.2, **kwargs):
+    def __init__(self, state_dim: int = 19, action_dim: int = 4, chunk_size: int = 32, d_model: int = 256, depth: int = 3, dropout: float = 0.3, **kwargs):
         super().__init__(state_dim, action_dim, chunk_size)
 
         in_dim = state_dim
-        # If the state dimension is exactly 31, we assume the specific order of keys below
-        if state_dim == 31:
-            in_dim = state_dim + 7  # Append extracted target cube location
-        elif state_dim == 19:
-            in_dim = state_dim + 9  # Target cube location (3) + rel_cube (3) + rel_bin (3)
-            
+        if state_dim == 19:
+            in_dim = state_dim + 9 # we add the cube's target pos (3), relative cube pos (3), relative bin pos (3)
+        elif state_dim == 31:
+            in_dim = state_dim + 7  # same but with the full dimensions            
         layers = []
         for _ in range(depth):
             layers.extend([
@@ -99,16 +97,7 @@ class MultiTaskPolicy(BasePolicy):
 
     def forward(self, state: torch.Tensor) -> torch.Tensor:
         """Return predicted action chunk of shape (B, chunk_size, action_dim)."""
-        if state.shape[1] == 31:
-            # Assumes order: red(7), green(7), blue(7), goal(3), bin(3), ee(3), gripper_jaw(1)
-            red = state[:, 0:7]
-            green = state[:, 7:14]
-            blue = state[:, 14:21]
-            goal = state[:, 21:24]
-            
-            target_cube = goal[:, 0:1] * red + goal[:, 1:2] * green + goal[:, 2:3] * blue
-            enhanced_state = torch.cat([state, target_cube], dim=1)
-        elif state.shape[1] == 19:
+        if state.shape[1] == 19:
             # ee(3), gripper(1), red(3), green(3), blue(3), goal(3), bin(3)
             ee = state[:, 0:3]
             red = state[:, 4:7]
@@ -122,6 +111,15 @@ class MultiTaskPolicy(BasePolicy):
             rel_bin = bin_pos - ee
             
             enhanced_state = torch.cat([state, target_cube, rel_cube, rel_bin], dim=1)
+        elif state.shape[1] == 31:
+            # Assumes order: red(7), green(7), blue(7), goal(3), bin(3), ee(3), gripper_jaw(1)
+            red = state[:, 0:7]
+            green = state[:, 7:14]
+            blue = state[:, 14:21]
+            goal = state[:, 21:24]
+            
+            target_cube = goal[:, 0:1] * red + goal[:, 1:2] * green + goal[:, 2:3] * blue
+            enhanced_state = torch.cat([state, target_cube], dim=1)
         else:
             enhanced_state = state
 
