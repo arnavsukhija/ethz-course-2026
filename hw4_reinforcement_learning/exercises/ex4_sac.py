@@ -178,7 +178,9 @@ class SACAgent:
             target_q = rew + self.gamma * (1 - done) * (q_next - self.alpha * next_logp)
 
         q1_pred, q2_pred = self.critic(obs, act)
-        critic_loss = torch.mean((target_q - q1_pred) ** 2 + (target_q - q2_pred) ** 2)
+        q1_loss = F.mse_loss(q1_pred, target_q)
+        q2_loss = F.mse_loss(q2_pred, target_q)
+        critic_loss = (q1_loss + q2_loss) / 2.0
 
         return critic_loss
 
