@@ -37,7 +37,7 @@ class ObstaclePolicy(BasePolicy):
     A simple MLP that maps a state vector to a flat action chunk
     (chunk_size * action_dim) and reshapes to (B, chunk_size, action_dim).
     """
-    def __init__(self, state_dim: int = 19, action_dim: int = 4, chunk_size: int = 16, d_model: int = 256, depth: int = 3, dropout: float = 0.2, **kwargs):
+    def __init__(self, state_dim: int = 10, action_dim: int = 4, chunk_size: int = 16, d_model: int = 256, depth: int = 3, dropout: float = 0.2, **kwargs):
         super().__init__(state_dim, action_dim, chunk_size)
 
         layers = []
