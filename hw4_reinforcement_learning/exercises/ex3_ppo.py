@@ -97,7 +97,7 @@ class PPOAgent:
             action_std = self.actor.action_std
             value = self.critic(obs)
 
-        return action, action_clipped, value, action_log_prob, action_mu, action_std
+        return action, action_clipped, value.item(), action_log_prob.item(), action_mu, action_std
 
     def predict_action(self, obs: torch.Tensor):
         """
@@ -285,7 +285,7 @@ class PPOAgent:
             nn.utils.clip_grad_norm_(chain(self.actor.parameters(), self.critic.parameters()), self.max_grad_norm)
             self.optimizer.step()
 
-            mean_kl += kl
+            mean_kl += kl.item()
             mean_surrogate_loss += surrogate_loss.item()
             mean_value_loss += value_loss.item()
             mean_entropy += entropy_batch.mean().item()

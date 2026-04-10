@@ -68,8 +68,8 @@ class PolicyIteration:
                     # Policy is fixed, so: Q^pi(s,a) = mean_st+1(r(st, at, st+1) + gamma * V^pi[next_state])
                     for prob, next_state, reward, done in self.env.P[s][a]:
                         qsa += prob * (reward + (1-done) * self.gamma * self.v[next_state])
-                qsa *= self.pi[s, a] # weight by policy 
-                qsa_list.append(qsa)
+                    qsa *= self.pi[s, a] # weight by policy 
+                    qsa_list.append(qsa)
                 new_v[s] = sum(qsa_list) # get expectation overt all actions
                 max_diff = max(max_diff, abs(new_v[s] - self.v[s]))
 
@@ -102,8 +102,7 @@ class PolicyIteration:
                 # TODO: compute qsa_list for all actions at state s
                 for prob, next_state, reward, done in self.env.P[s][a]:
                     qsa += prob * (reward + (1-done) * self.gamma * self.v[next_state])
-            qsa *= self.pi[s, a] # weight by policy 
-            qsa_list.append(qsa)
+                qsa_list.append(qsa)
 
             max_q = max(qsa_list)
             num_best_actions = sum(np.isclose(qsa_list, max_q))
