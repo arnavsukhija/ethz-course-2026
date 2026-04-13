@@ -13,10 +13,10 @@ Please keep the remaining parameters unchanged unless explicitly stated.
 DQN_PARAMETERS = {
     # TODO: Tune the following hyperparameters
     # Replace the default values with your own choices.
-    "lr": 1e-3,            # TODO
-    "epsilon": 0.03,       # TODO
-    "target_update": 10,   # TODO
-    "hidden_dim": 128,     # TODO
+    "lr": 5e-4,            # TODO: use lower learning rate for stability
+    "epsilon": 0.1,       # TODO: 0.03 is too low for exploration, use 0.1
+    "target_update": 50,   # TODO: lets increase to 50 to stabilize training
+    "hidden_dim": 128,     # TODO: is fine, cartpole has simple state space
     
     # Fixed parameters
     "gamma": 0.99,
